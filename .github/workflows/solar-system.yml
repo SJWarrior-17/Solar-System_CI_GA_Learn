@@ -7,7 +7,7 @@ on:
             - main
             - 'feature/*'
 env:
-    MONGO_URI: ${{ vars.MONGO_URI }}
+    MONGO_URI: 'mongodb+srv://test-githubactions.8wele6h.mongodb.net/'
     MONGO_USERNAME: ${{ vars.MONGO_USERNAME}}
     MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
