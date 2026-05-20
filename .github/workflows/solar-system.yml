@@ -21,7 +21,7 @@ jobs:
               #Ref: https://github.com/marketplace/actions/checkout
 
             - name: Setup NodeJS version - 18
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v3
               with:
                 node-version: 18
               # Ref: https://github.com/marketplace/actions/setup-node-js-environment
@@ -41,3 +41,4 @@ jobs:
               with:
                 name: Mocha-Test-Result
                 path: test-result.xml
+              #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
