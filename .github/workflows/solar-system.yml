@@ -19,22 +19,12 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v6
               #Ref: https://github.com/marketplace/actions/checkout
-            
-            - name: Install Node 18
-              run: |
-               export NVM_DIR="$HOME/.nvm"
-               [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-           
-               nvm install 18
-               nvm use 18
-           
-               node -v
 
-            # - name: Setup NodeJS version - 18
-            #   uses: actions/setup-node@v6
-            #   with:
-            #     node-version: 18
-            #   # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+            - name: Setup NodeJS version - 20
+              uses: actions/setup-node@v6
+              with:
+                node-version: 20
+              # Ref: https://github.com/marketplace/actions/setup-node-js-environment
 
             - name: Intalling Dependencies
               run: npm install
