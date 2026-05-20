@@ -7,9 +7,9 @@ on:
             - main
             - 'feature/*'
 env:
-    MONGO_URI: ${{ secrets.MONGO_URI }}
-    # MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
-    # MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+    MONGO_URI: 'mongodb+srv://cluster0.i2cznc9.mongodb.net/'
+    MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
 jobs:
     unit-testing:
