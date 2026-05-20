@@ -29,9 +29,6 @@ jobs:
             - name: Intalling Dependencies
               run: npm install
             
-            - name: Nodejs-version
-              run: node -v
-                
             - name: Unit Testing
               run: npm test
 
