@@ -21,7 +21,7 @@ jobs:
               #Ref: https://github.com/marketplace/actions/checkout
 
             - name: Setup NodeJS version - 18
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                 node-version: 18
               # Ref: https://github.com/marketplace/actions/setup-node-js-environment
