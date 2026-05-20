@@ -29,9 +29,13 @@ jobs:
             - name: Intalling Dependencies
               run: npm install
             
-            - name: Nodejs & NVM version
+            - name: Nodejs-version
+              run: node -v
+                
+            - name: NVM-Install
               run: |
-                node -v
+                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                source ~/.bashrc
                 nvm --version
 
             - name: Unit Testing
