@@ -7,7 +7,7 @@ on:
             - main
             - 'feature/*'
 env:
-    MONGO_URI: 'mongodb+srv://legin_db_user:${{ secrets.MONGO_PASSWORD }}@cluster0.i2cznc9.mongodb.net/solar-system?retryWrites=true&w=majority'
+    MONGO_URI: 'mongodb+srv://${{ vars.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@cluster0.i2cznc9.mongodb.net/solar-system?retryWrites=true&w=majority'
     # MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
     # MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
