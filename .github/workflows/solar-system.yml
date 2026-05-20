@@ -32,6 +32,12 @@ jobs:
             - name: Nodejs-version
               run: |
                 node -v
-                
+
             - name: Unit Testing
               run: npm test
+
+            - name: Archive test result
+              uses: actions/upload-artifact@v7
+              with:
+                name: Mocha-Test-Result
+                path: test-result.xml
