@@ -14,9 +14,13 @@ app.use(cors())
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
+
+    app.listen(3000, () => {
+      console.log("Server running on port 3000");
+    });
   })
-  .catch((err) => {
-    console.log("error!! " + err);
+  .catch(err => {
+    console.log("MongoDB error:", err);
   });
 
 var Schema = mongoose.Schema;
