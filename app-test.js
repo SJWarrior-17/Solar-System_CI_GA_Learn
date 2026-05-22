@@ -188,3 +188,7 @@ describe('Testing Other Endpoints', () => {
     });
 
 });
+
+after(async () => {
+    await mongoose.connection.close();
+});
