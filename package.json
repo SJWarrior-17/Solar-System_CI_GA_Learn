@@ -7,7 +7,6 @@
   "scripts": {
     "start": "node server.js",
     "test": "mocha app-test.js --timeout 10000 --reporter spec",
-    // "test": "mocha app-test.js --timeout 10000 --reporter mocha-junit-reporter --exit",
     "coverage": "nyc --reporter cobertura --reporter lcov --reporter text --reporter json-summary  mocha app-test.js --timeout 10000  --exit"
   },
   "nyc": {
