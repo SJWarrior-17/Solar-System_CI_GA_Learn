@@ -50,28 +50,24 @@ const planetModel = mongoose.model('Planet', dataSchema, 'planets');
 // Planet API (FIXED)
 app.post('/planet', function (req, res) {
 
-    // ✅ FIX 1: normalize type (VERY IMPORTANT for CI + Mongo)
     const planetId = Number(req.body.id);
 
-    // validate input properly
     if (req.body.id === undefined || req.body.id === null || Number.isNaN(planetId)) {
         return res.status(400).json({
             error: "Planet id is required"
         });
     }
 
-    // DB check (only in real mode)
     if (!dbConnected && !isTestMode) {
         return res.status(503).json({
             error: "Database connection error. Please try again later."
         });
     }
 
-    // query MongoDB
     planetModel.findOne({ id: planetId }, function (err, planetData) {
 
         if (err) {
-            console.error("MongoDB Error:", err);
+            console.error(err);
             return res.status(500).json({
                 error: "Error in Planet Data"
             });
@@ -86,7 +82,6 @@ app.post('/planet', function (req, res) {
         return res.status(200).json(planetData);
     });
 });
-
 
 // Home
 app.get('/', function (req, res) {
