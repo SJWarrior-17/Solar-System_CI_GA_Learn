@@ -1,0 +1,75 @@
+name: Solar System Workflow_3
+
+on:
+    workflow_dispatch:
+    # push:
+    #     branches:
+    #         - main
+    #         - 'feature/*'
+env:
+    MONGO_URI: 'mongodb+srv://${{ vars.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@papukadb.pbvja02.mongodb.net/papukaDB?retryWrites=true&w=majority'
+    # MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+    # MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+jobs:
+    unit-testing:
+        name: Unit Testing
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest]
+            node_js_version: [18, 19, 20]
+            exclude:
+              - node_js_version : 18
+                os: macos-latest
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v6
+              #Ref: https://github.com/marketplace/actions/checkout
+
+            - name: Setup NodeJS version - ${{ matrix.node_js_version }}
+              uses: actions/setup-node@v6
+              with:
+                node-version: ${{ matrix.node_js_version }}
+              # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+            - name: Intalling Dependencies
+              run: npm install
+            
+            - name: Unit Testing
+              run: npm test
+
+            - name: Archive test result
+              uses: actions/upload-artifact@v7
+              with:
+                name: Mocha-Test-Result
+                path: test-result.xml
+              #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
+            
+    code-coverage:
+        name: Code Coverage
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
+          #Ref: https://github.com/marketplace/actions/checkout
+
+        - name: Setup NodeJS version - 20
+          uses: actions/setup-node@v6
+          with:
+            node-version: 20
+          # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+        - name: Intalling Dependencies
+          run: npm install
+        
+        - name: Check Code Coverage
+          run: npm run coverage  
+
+        - name: Archive test result
+          uses: actions/upload-artifact@v7
+          with:
+            name: Code-Coverage-Result
+            path: coverage
+            retention-days: 5
+          #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
