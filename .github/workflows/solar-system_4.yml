@@ -37,9 +37,14 @@ jobs:
               run: npm install
             
             - name: Unit Testing
+              id: nodejs_unit_testing_step
               run: npm test
 
             - name: Archive test result
+              if: always()
+              # if: failure() && (steps.nodejs_unit_testing_step.outcome == 'failure' || steps.nodejs_unit_testing_step.outcome == 'success')
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#steps-context 
               uses: actions/upload-artifact@v7
               with:
                 name: Mocha-Test-Result
