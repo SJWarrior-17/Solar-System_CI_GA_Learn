@@ -5,6 +5,10 @@ name: Solar System Workflow_5
 #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
 #Ref: https://github.com/marketplace/actions/cache
 
+
+# Q. What is cache invalidation in GitHub Actions?
+# GitHub Actions caching speeds up CI/CD by storing dependencies or build artifacts. Cache invalidation means ensuring stale cache entries are not reused after dependency or configuration changes. Usually this is done by generating cache keys from lock files using hashFiles(). When the file changes, the hash changes, creating a new cache automatically.”
+
 on:
     workflow_dispatch:
     # push:
