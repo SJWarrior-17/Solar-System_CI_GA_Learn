@@ -1,4 +1,4 @@
-name: Solar System Workflow_5
+name: Solar System Workflow_6
 
 #Caching dependencies in GitHub Actions significantly speeds up CI/CD workflows by avoiding redundant downloads of unchanged packages.
 #Ref: https://docs.github.com/en/actions/concepts/workflows-and-actions/dependency-caching#about-workflow-dependency-caching
