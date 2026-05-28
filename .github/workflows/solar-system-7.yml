@@ -1,0 +1,123 @@
+name: New Solar System Workflow 7
+
+#Caching dependencies in GitHub Actions significantly speeds up CI/CD workflows by avoiding redundant downloads of unchanged packages.
+#Ref: https://docs.github.com/en/actions/concepts/workflows-and-actions/dependency-caching#about-workflow-dependency-caching
+#Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+#Ref: https://github.com/marketplace/actions/cache
+
+
+# Q. What is cache invalidation in GitHub Actions?
+# GitHub Actions caching speeds up CI/CD by storing dependencies or build artifacts. Cache invalidation means ensuring stale cache entries are not reused after dependency or configuration changes. Usually this is done by generating cache keys from lock files using hashFiles(). When the file changes, the hash changes, creating a new cache automatically.”
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+            - 'feature/*'
+            
+env:
+    MONGO_URI: 'mongodb+srv://mongodb-prod.uizvbwm.mongodb.net/superData'
+    MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+jobs:
+    unit-testing:
+        name: Unit Testing
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest]
+            node_js_version: [18, 19, 20]
+            exclude:
+              - node_js_version : 18
+                os: macos-latest
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v6
+              #Ref: https://github.com/marketplace/actions/checkout
+
+            - name: Setup NodeJS version - ${{ matrix.node_js_version }}
+              uses: actions/setup-node@v6
+              with:
+                node-version: ${{ matrix.node_js_version }}
+              # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+            - name: Cache NPM Dependencies
+              uses: actions/cache@v5
+              with:
+                path: node_modules
+                key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+            - name: Intalling Dependencies
+              run: npm install
+            
+            - name: Unit Testing
+              id: nodejs_unit_testing_step
+              run: npm test
+
+            - name: Archive test result
+              if: always()
+              # if: failure() && (steps.nodejs_unit_testing_step.outcome == 'failure' || steps.nodejs_unit_testing_step.outcome == 'success')
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#steps-context 
+              uses: actions/upload-artifact@v7
+              with:
+                name: Mocha-Test-Result
+                path: test-result.xml
+              #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
+            
+    code-coverage:
+        name: Code Coverage
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
+          #Ref: https://github.com/marketplace/actions/checkout
+
+        - name: Setup NodeJS version - 20
+          uses: actions/setup-node@v6
+          with:
+            node-version: 20
+          # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+        - name: Cache NPM Dependencies
+          uses: actions/cache@v5
+          with:
+            path: node_modules
+            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}     
+                 
+        - name: Intalling Dependencies
+          run: npm install
+        
+        - name: Check Code Coverage
+          continue-on-error: true
+          run: npm run coverage  
+          # 'continue-on-error: Can be defined at Job level or step leval'
+          # Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error
+          # Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idcontinue-on-error
+          # If we will define at Step Level: Prevents a job from failing when a step fails. Set to true to allow a job to pass when this step fails.
+          # If we will define at Job Level: Prevents a workflow run from failing when a job fails. Set to `true` to allow a workflow run to pass when this job fails.
+
+        - name: Archive test result
+          uses: actions/upload-artifact@v7
+          with:
+            name: Code-Coverage-Result
+            path: coverage
+            retention-days: 5
+          #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
+
+    docker:
+        name: Containerization
+        needs: [unit-testing, code-coverage]
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
+
+        - name: DockerHub Login
+          uses: docker/login-action@v4
+          with:
+            username: ${{ vars.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+          # Ref: https://github.com/marketplace/actions/docker-login     
