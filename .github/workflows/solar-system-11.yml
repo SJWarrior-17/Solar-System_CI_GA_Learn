@@ -1,0 +1,179 @@
+name: New Solar System Workflow 11
+
+# What is job containers in github actions?
+# In GitHub Actions, job containers allow you to run all steps of a job within a specific Docker container rather than directly on the runner's host virtual machine. This ensures a consistent, reproducible environment with all necessary dependencies, compilers, and tools pre-installed.
+# Use Case: Suppose a project requires Node.js 20 and specific system libraries. Instead of installing them manually on every GitHub runner, we use a job container with a preconfigured Docker image. This ensures the CI pipeline always runs in the same environment, avoiding “works on my machine” issues and making builds reproducible.
+# Interview one-liner: Job containers are mainly used to provide a consistent and reproducible build/test environment in GitHub Actions.
+# Ref: https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container
+
+
+
+# What is service containers in github actions?
+# Service containers in GitHub Actions are ephemeral Docker containers used to host supporting services—like databases, caches, or message queues—that your application needs during a workflow run.
+# Use Case: Suppose an application needs a PostgreSQL database during integration testing. Instead of installing and configuring PostgreSQL manually in the workflow, we use a service container to start a temporary database alongside the job. The application tests can then connect to this database during execution.
+# Interview one-liner: Service containers are used to run dependent services like databases, Redis, or Kafka during CI testing.
+# Ref: https://docs.github.com/en/actions/tutorials/use-containerized-services/use-docker-service-containers
+
+# Note: If you will define the same env variables both workflow and job level, in that case job level env variable has higher precedence.  
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+            - 'feature/*'
+            
+env:
+    MONGO_URI: 'mongodb+srv://mongodb-prod.uizvbwm.mongodb.net/superData'
+    MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+jobs:
+    unit-testing:
+        name: Unit Testing
+        services:
+          mongo-db:
+            image: siddharth67/mongo-db:non-prod
+            ports:
+              - 27017:27017
+        env:
+          MONGO_URI: 'mongodb://localhost:27017/superData'
+          MONGO_USERNAME: non-prod-user # No a good practice for demo we are using it
+          MONGO_PASSWORD: non-prod-password # No a good practice for demo we are using it
+        strategy:
+          matrix:
+            os: [ubuntu-latest]
+            node_js_version: [18, 20]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v6
+              #Ref: https://github.com/marketplace/actions/checkout
+
+            - name: Setup NodeJS version - ${{ matrix.node_js_version }}
+              uses: actions/setup-node@v6
+              with:
+                node-version: ${{ matrix.node_js_version }}
+              # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+            - name: Cache NPM Dependencies
+              uses: actions/cache@v5
+              with:
+                path: node_modules
+                key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+            - name: Intalling Dependencies
+              run: npm install
+            
+            - name: Unit Testing
+              id: nodejs_unit_testing_step
+              run: npm test
+
+            - name: Archive test result
+              if: always()
+              # if: failure() && (steps.nodejs_unit_testing_step.outcome == 'failure' || steps.nodejs_unit_testing_step.outcome == 'success')
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#steps-context 
+              uses: actions/upload-artifact@v7
+              with:
+                name: Mocha-Test-Result
+                path: test-result.xml
+              #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
+            
+    code-coverage:
+        name: Code Coverage
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
+          #Ref: https://github.com/marketplace/actions/checkout
+
+        - name: Setup NodeJS version - 20
+          uses: actions/setup-node@v6
+          with:
+            node-version: 20
+          # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+        - name: Cache NPM Dependencies
+          uses: actions/cache@v5
+          with:
+            path: node_modules
+            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}     
+                 
+        - name: Intalling Dependencies
+          run: npm install
+        
+        - name: Check Code Coverage
+          continue-on-error: true
+          run: npm run coverage  
+          # 'continue-on-error: Can be defined at Job level or step leval'
+          # Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error
+          # Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idcontinue-on-error
+          # If we will define at Step Level: Prevents a job from failing when a step fails. Set to true to allow a job to pass when this step fails.
+          # If we will define at Job Level: Prevents a workflow run from failing when a job fails. Set to `true` to allow a workflow run to pass when this job fails.
+
+        - name: Archive test result
+          uses: actions/upload-artifact@v7
+          with:
+            name: Code-Coverage-Result
+            path: coverage
+            retention-days: 5
+          #Ref: https://github.com/marketplace/actions/upload-a-build-artifact
+
+    docker:
+        name: Containerization
+        needs: [unit-testing, code-coverage]
+        runs-on: ubuntu-latest
+        permissions:
+          packages: write
+        steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
+
+        - name: DockerHub Login
+          uses: docker/login-action@v4
+          with:
+            username: ${{ vars.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+          # Ref: https://github.com/marketplace/actions/docker-login
+
+        - name: Login to GitHub Container Registry
+          uses: docker/login-action@v4
+          with:
+            registry: ghcr.io
+            username: ${{ github.repository_owner }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+         # Ref(GITHUB_TOKEN): https://docs.github.com/en/actions/tutorials/authenticate-with-github_token 
+
+        - name: Docker Build for Testing
+          uses: docker/build-push-action@v7
+          with:
+            context: .
+            push: false
+            tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+          # Ref: https://github.com/marketplace/actions/build-and-push-docker-images        
+
+        - name: Docker Image Testing
+          run: |
+            docker images
+            docker run --name solar-system-app -d \
+              -p 3000:3000 \
+              -e MONGO_URI=$MONGO_URI \
+              -e MONGO_USERNAME=$MONGO_USERNAME \
+              -e MONGO_PASSWORD=$MONGO_PASSWORD \
+              ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+        
+            export IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' solar-system-app)
+            echo $IP
+        
+            echo Testing Image URL using wget
+            wget -q -O - 127.0.0.1:3000/live | grep live
+
+        - name: Pushing Image to Container-Registries
+          uses: docker/build-push-action@v7
+          with:
+            context: .
+            push: true
+            tags: | 
+              ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+              ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
