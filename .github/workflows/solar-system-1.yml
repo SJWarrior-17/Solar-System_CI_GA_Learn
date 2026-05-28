@@ -1,0 +1,33 @@
+name: New Solar System Workflow 1
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+            - 'feature/*'
+env:
+    MONGO_URI: 'mongodb+srv://mongodb-prod.uizvbwm.mongodb.net/superData'
+    MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+jobs:
+    unit-testing:
+        name: Unit Testing
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v6
+              #Ref: https://github.com/marketplace/actions/checkout
+
+            - name: Setup NodeJS version - 20
+              uses: actions/setup-node@v6
+              with:
+                node-version: 20
+              # Ref: https://github.com/marketplace/actions/setup-node-js-environment
+
+            - name: Intalling Dependencies
+              run: npm install
+            
+            - name: Unit Testing
+              run: npm test
