@@ -1,4 +1,4 @@
-name: New Solar System Workflow 16
+name: New Solar System Workflow 17
 
 on:
     workflow_dispatch:
