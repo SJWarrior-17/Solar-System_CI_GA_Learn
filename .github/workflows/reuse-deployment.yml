@@ -1,0 +1,95 @@
+name: Reuse-Deploy
+
+#Called
+# Ref: https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations
+# Ref: https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows
+on:
+    workflow_call: 
+
+jobs:
+    reuse-deploy:
+        environment: #Added Environment varibale logic it different to env.
+          name: development
+          url: https://${{ steps.set-host-ingress-add.outputs.APP_INGRESS_URL }}
+        runs-on: ubuntu-latest
+        outputs:
+          APP_INGRESS_URL: ${{ steps.set-host-ingress-add.outputs.APP_INGRESS_URL }} #Ref to - Passing information between jobs
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v6
+              #Ref: https://github.com/marketplace/actions/checkout
+
+            - name: Installing kubectl
+              uses: azure/setup-kubectl@v4
+              with:
+                version: 'v1.34.0'
+              #Ref: https://github.com/marketplace/actions/kubectl-tool-installer
+
+            # As I don't have Ready Kubernetes cluster that's why commenting out thin section adding steps to provision miniKube cluster  
+            # - name: Setting up Kubeconfig
+            #   uses: azure/k8s-set-context@v5
+            #   with:
+            #       method: kubeconfig
+            #       kubeconfig: ${{ secrets.KUBECONFIG}}
+            #   # Ref: https://github.com/marketplace/actions/kubernetes-set-context
+            
+            - name: Setup minikube cluster
+              id: minikube
+              uses: medyagh/setup-minikube@latest
+              with:
+                addons: ingress
+              # It's self explored action.
+              # Ref: https://github.com/marketplace/actions/setup-minikube
+
+            - name: Fetching Kubernetes Cluster Details
+              run: |
+                kubectl version
+                echo -----------------------------------
+                kubectl get nodes
+
+            - name: Fetching ingress controller IP detils and store in GitHub actions Environment Variables
+              run: |
+                echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> "$GITHUB_ENV"
+              #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-an-environment-variable
+
+            - name: Replace placeholder tokens in menifests
+              uses: cschleiden/replace-tokens@v1
+              with:
+                  tokenPrefix: '_{_'
+                  tokenSuffix: '_}_'
+                  files: '["kubernetes/development/*.yaml"]'
+              env:
+                  NAMESPACE: ${{ vars.NAMESPACE }}
+                  REPLICAS: ${{ vars.REPLICAS }}
+                  IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+                  INGRESS_IP: ${{ env.INGRESS_IP }}
+             #Ref: https://github.com/marketplace/actions/replace-tokens
+
+            - name: Validating the manifests
+              run: cat kubernetes/development/*.yaml
+
+            - name: Creating a namespace
+              run: kubectl create ns ${{ vars.NAMESPACE}}
+              # Added this as I am tesing this on MiniKube
+
+            - name: Create MongoDB Secret
+              run: |
+                kubectl -n ${{ vars.NAMESPACE}} create secret generic mongo-db-creds \
+                --from-literals=MONGO_URI=${{ vars.MONGO_URI }} \
+                --from-literals=MONGO_USERNAME=${{ vars.MONGO_USERNAME }} \
+                --from-literals=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+                --save-config \
+                --dry-run=client \
+                -o yaml | kubectl apply -f -
+
+            - name: Deploy to Dev Env
+              run: kubectl apply -f kubernetes/development
+
+            - name: Set App INGRESS host URL
+              id: set-host-ingress-add
+              run: |
+                echo "APP_INGRESS_URL=$(kubectl -n ${{ vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
+              # Passing information between jobs
+              # Ref: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs
+              # Passing values between steps and jobs in a workflow
+              # Ref: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#passing-values-between-steps-and-jobs-in-a-workflow
