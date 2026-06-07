@@ -5,7 +5,13 @@ name: Reuse-Deploy
 # Ref: https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows
 on:
     workflow_call: 
-
+        secrets:
+            # kube_cofig:
+            #     required: true
+            mongodb_password:
+                required: true
+            # Added secrets calling logic in called workflow file
+            # Ref: https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#using-inputs-and-secrets-in-a-reusable-workflow
 jobs:
     reuse-deploy:
         environment: #Added Environment varibale logic it different to env.
@@ -88,7 +94,8 @@ jobs:
             - name: Set App INGRESS host URL
               id: set-host-ingress-add
               run: |
-                echo "APP_INGRESS_URL=$(kubectl -n ${{ vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
+                echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')" >> "$GITHUB_ENV"
+              #Actual Command #echo "APP_INGRESS_URL=$(kubectl -n ${{ vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
               # Passing information between jobs
               # Ref: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs
               # Passing values between steps and jobs in a workflow
