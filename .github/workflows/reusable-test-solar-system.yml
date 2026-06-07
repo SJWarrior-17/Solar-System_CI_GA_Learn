@@ -185,6 +185,9 @@ jobs:
         if: contains(github.ref, 'feature/') #Added if condition
         needs: docker
         uses: ./.github/workflows/reuse-deploy.yml
+        secrets:
+        #   kube_config: ${{ secrets.KUBECONFIG}}
+          mongodb_password: ${{ secrets.MONGO_PASSWORD }}
 
     dev-integration-testing:
        name: Dev integration testing
@@ -205,7 +208,9 @@ jobs:
         if: github.ref == 'refs/heads/main' #Added if condition to deploy this in production environment.
         needs: docker
         uses: ./.github/workflows/reuse-deploy.yml
-
+        secrets:
+        #   kube_config: ${{ secrets.KUBECONFIG}}
+          mongodb_password: ${{ secrets.MONGO_PASSWORD }}        
 
     prod-integration-testing:
        name: PROD integration testing
