@@ -55,7 +55,8 @@ jobs:
 
             - name: Fetching ingress controller IP detils and store in GitHub actions Environment Variables
               run: |
-                echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> "$GITHUB_ENV"
+                echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')" >> "$GITHUB_ENV"
+              #Actual Command #echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> "$GITHUB_ENV"
               #Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-an-environment-variable
 
             - name: Replace placeholder tokens in menifests
@@ -94,8 +95,7 @@ jobs:
             - name: Set App INGRESS host URL
               id: set-host-ingress-add
               run: |
-                echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.clusterIP}')" >> "$GITHUB_ENV"
-              #Actual Command #echo "APP_INGRESS_URL=$(kubectl -n ${{ vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
+                echo "APP_INGRESS_URL=$(kubectl -n ${{ vars.NAMESPACE}} get ingress -o jsonpath="{.items[0].spec.tls[0].hosts[0]}")" >> "$GITHUB_OUTPUT"
               # Passing information between jobs
               # Ref: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs
               # Passing values between steps and jobs in a workflow
