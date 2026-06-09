@@ -5,6 +5,25 @@ name: Reuse-Deploy
 # Ref: https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows
 on:
     workflow_call: 
+        inputs:
+          mongo_uri:
+            type: string
+            required: true
+          kubectl-version:
+            description: Provide the required kubectl version
+            default: v1.34.0
+            required: false
+            type: string
+          k8s-manifests-dir:
+            description: Directory Containing the Kubernetes menifests file
+            default: kubernetes/
+            type: string
+            required: true
+          deploy-envrionment:
+            description: Provide the Deployment environment
+            default: dev
+            type: string
+            required: true
         secrets:
             # kube_config:
             #     required: true
@@ -15,7 +34,7 @@ on:
 jobs:
     reuse-deploy:
         environment: #Added Environment varibale logic it different to env.
-          name: development
+          name: ${{ inputs.deploy-envrionment }}
           url: https://${{ steps.set-host-ingress-add.outputs.APP_INGRESS_URL }}
         runs-on: ubuntu-latest
         outputs:
@@ -28,7 +47,7 @@ jobs:
             - name: Installing kubectl
               uses: azure/setup-kubectl@v4
               with:
-                version: 'v1.34.0'
+                version: '${{ inputs.kubectl-version }}'
               #Ref: https://github.com/marketplace/actions/kubectl-tool-installer
 
             # As I don't have Ready Kubernetes cluster that's why commenting out thin section adding steps to provision miniKube cluster  
@@ -64,7 +83,7 @@ jobs:
               with:
                   tokenPrefix: '_{_'
                   tokenSuffix: '_}_'
-                  files: '["kubernetes/development/*.yaml"]'
+                  files: '["${{ inputs.k8s-manifests-dir }}*.yaml"]'
               env:
                   NAMESPACE: ${{ vars.NAMESPACE }}
                   REPLICAS: ${{ vars.REPLICAS }}
@@ -73,7 +92,7 @@ jobs:
              #Ref: https://github.com/marketplace/actions/replace-tokens
 
             - name: Validating the manifests
-              run: cat kubernetes/development/*.yaml
+              run: cat ${{ inputs.k8s-manifests-dir }}*.yaml
 
             - name: Creating a namespace
               run: kubectl create ns ${{ vars.NAMESPACE}}
@@ -82,7 +101,7 @@ jobs:
             - name: Create MongoDB Secret
               run: |
                 kubectl -n ${{ vars.NAMESPACE}} create secret generic mongo-db-creds \
-                --from-literal=MONGO_URI=${{ vars.MONGO_URI }} \
+                --from-literal=MONGO_URI=${{ inputs.mongo_uri }} \
                 --from-literal=MONGO_USERNAME=${{ vars.MONGO_USERNAME }} \
                 --from-literal=MONGO_PASSWORD=${{ secrets.mongodb_password }} \
                 --save-config \
@@ -90,7 +109,7 @@ jobs:
                 -o yaml | kubectl apply -f -
 
             - name: Deploy to Dev Env
-              run: kubectl apply -f kubernetes/development
+              run: kubectl apply -f ${{ inputs.k8s-manifests-dir }}
 
             - name: Set App INGRESS host URL
               id: set-host-ingress-add
