@@ -201,7 +201,7 @@ jobs:
        steps:
          - name: TEST URL output using CURL and JQ
            env:
-             URL: ${{ needs.dev-deploy.outputs.APP_INGRESS_URL }}
+             URL: ${{ needs.dev-deploy.outputs.application_url }}
            #Ref to - Passing information between jobs
            run: |
              echo $URL
@@ -228,7 +228,7 @@ jobs:
        steps:
          - name: TEST URL output using CURL and JQ
            env:
-             URL: ${{ needs.prod-deploy.outputs.APP_INGRESS_URL }}
+             URL: ${{ needs.prod-deploy.outputs.application_url }}
            #Ref to - Passing information between jobs
            run: |
              echo $URL

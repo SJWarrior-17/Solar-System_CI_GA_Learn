@@ -24,6 +24,9 @@ on:
             default: dev
             type: string
             required: true
+        outputs:
+          application_url:
+            value: ${{ jobs.reuse-deploy.outputs.APP_INGRESS_URL }}    
         secrets:
             # kube_config:
             #     required: true
