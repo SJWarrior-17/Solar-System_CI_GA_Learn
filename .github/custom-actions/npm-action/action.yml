@@ -1,0 +1,23 @@
+name: 'NPM Custom Action'
+description: 'Installing and Cahcing the NPM Packages'
+inputs:
+  path-of-folder:
+    description: 'The Path to Cache'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Cache NPM Dependencies
+      uses: actions/cache@v5
+      with:
+        path: ${{ inputs.path-of-folder }}
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}     
+             
+    - name: Intalling Dependencies
+      run: npm install
+      shell: bash
+
+# Ref: https://docs.github.com/en/actions/concepts/workflows-and-actions/custom-actions#about-custom-actions
+# Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/metadata-syntax#runs-for-composite-actions
+# Ref: https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action#creating-an-action-metadata-file
+# Ref: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell

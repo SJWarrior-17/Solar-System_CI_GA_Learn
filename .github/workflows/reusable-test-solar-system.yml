@@ -41,15 +41,11 @@ jobs:
                 node-version: ${{ matrix.node_js_version }}
               # Ref: https://github.com/marketplace/actions/setup-node-js-environment
 
-            - name: Cache NPM Dependencies
-              uses: actions/cache@v5
+            - name: Custom Action - Installing & Caching NPM Packages
+              uses: ./.github/custom-actions/npm-action
               with:
-                path: node_modules
-                key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+                path-of-folder: node_modules
 
-            - name: Intalling Dependencies
-              run: npm install
-            
             - name: Unit Testing
               id: nodejs_unit_testing_step
               run: npm test
@@ -91,14 +87,10 @@ jobs:
         #     node-version: 20
         #   # Ref: https://github.com/marketplace/actions/setup-node-js-environment
 
-        - name: Cache NPM Dependencies
-          uses: actions/cache@v5
+        - name: Custom Action - Installing & Caching NPM Packages
+          uses: ./.github/custom-actions/npm-action
           with:
-            path: node_modules
-            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}     
-                 
-        - name: Intalling Dependencies
-          run: npm install
+            path-of-folder: node_modules
         
         - name: Check Code Coverage
           continue-on-error: true
