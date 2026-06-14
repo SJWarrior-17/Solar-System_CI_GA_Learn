@@ -270,3 +270,23 @@ jobs:
              echo $URL
              echo "-------------------------------------"
              curl -s -k https://$URL/live | jq -r .status | grep -i live
+
+    slack-notification:
+       if: always()
+       name: Slack Notification
+       needs: [dev-integration-testing, prod-integration-testing]
+       continue-on-error: true
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v6
+         - name: Slack Notification
+           uses: rtCamp/action-slack-notify@v2
+           env:
+              SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+              SLACK_CHANNEL: github-actions-channel
+              SLACK_COLOR: ${{ job.status }}
+              SLACK_MESSAGE: ':hammer_and_wrench: Triggered by ${{ github.actor}}'
+              SLACK_TITLE: Information
+        # Ref: https://github.com/marketplace/actions/slack-notify
+        # Ref: 'if : always()' : https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#always
+        # always:  the step to always execute, and returns true, even when canceled. The always expression is best used at the step level or on tasks that you expect to run even when a job is canceled. 
