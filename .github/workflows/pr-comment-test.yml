@@ -1,0 +1,18 @@
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  pr-action:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Post PR Comment
+        uses: SJWarrior-17/pr-giphy-comment@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          giphy-api-token: ${{ secrets.GIPHY_API_TOKEN }}
